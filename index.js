@@ -63,7 +63,7 @@ async function run() {
       const options = await usersCollection.find(query).toArray();
       if (options.length > 0) {
         res.send({
-          accessToken: "",
+          accessToken: "available",
           user: options[0],
         });
       } else {
@@ -87,54 +87,144 @@ async function run() {
           .toArray();
         console.log(user);
         res.send({
-          accessToken: "",
+          accessToken: "available",
           user: user[0],
         });
       }
     });
-
+    // ---------------------------- Users -----------------------
     //get all users
     app.get("/users", async (req, res) => {
       const query = {};
       const users = await usersCollection.find(query).toArray();
       res.send(users);
     });
-    // get one assignment
+    // get single user
     app.get("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const user = await usersCollection.find(query).toArray();
+      console.log(user[0]);
       res.send(user);
     });
-
+    // ----------------------------- Videos ---------------------
     // get all videos
     app.get("/videos", async (req, res) => {
       const query = {};
       const videos = await videosCollection.find(query).toArray();
       res.send(videos);
     });
-    // get one assignment
+    app.post("/videos", async (req, res) => {
+      const body = req.body;
+      const videos = await videosCollection.insertOne(body);
+      if (videos.acknowledged) {
+        const v = await videosCollection
+          .find({ _id: new ObjectId(videos.insertedId) })
+          .toArray();
+        res.send(v[0]);
+      } else {
+        res.send("");
+      }
+    });
+    // get single video
     app.get("/videos/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const video = await videosCollection.find(query).toArray();
-      res.send(video);
+      res.send(video[0]);
     });
-
+    // update single video
+    app.patch("/videos/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const body = req.body;
+      const options = { upsert: true };
+      // create a document that sets the plot of the movie
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await videosCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      if (result.acknowledged) {
+        const updatedItem = await videosCollection
+          .find({ title: body.title })
+          .toArray();
+        // console.log(updatedItem);
+        res.send(updatedItem[0]);
+      }
+    });
+    app.delete("/videos/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await videosCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.send({});
+      }
+    });
+    // -------------------------- Assignment -----------------------
     // get all assignments
     app.get("/assignments", async (req, res) => {
       const query = {};
       const assignments = await assignmentsCollection.find(query).toArray();
       res.send(assignments);
     });
+    app.post("/assignments", async (req, res) => {
+      const body = req.body;
+      const assignment = await assignmentsCollection.insertOne(body);
+      console.log(assignment);
+      if (assignment?.acknowledged) {
+        const result = {
+          ...body,
+          _id: assignment?.insertedId,
+        };
+        res.send(result);
+      }
+    });
     // get one assignment
     app.get("/assignments/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const assignment = await assignmentsCollection.find(query).toArray();
-      res.send(assignment);
+      res.send(assignment[0]);
     });
-
+    app.delete("/assignments/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await assignmentsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.send({});
+      }
+    });
+    app.patch("/assignments/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const body = req.body;
+      const options = { upsert: true };
+      // create a document that sets the plot of the movie
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await assignmentsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      if (result.acknowledged) {
+        const updatedItem = await assignmentsCollection
+          .find({ title: body.title })
+          .toArray();
+        console.log(updatedItem);
+        res.send(updatedItem[0]);
+      } else {
+        res.send({});
+      }
+    });
+    // --------------------------- quizzes -------------------------------
     // get all quizzes
     app.get("/quizzes", async (req, res) => {
       const query = {};
@@ -146,9 +236,55 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const quiz = await quizzesCollection.find(query).toArray();
-      res.send(quiz);
+      res.send(quiz[0]);
+    });
+    app.post("/quizzes", async (req, res) => {
+      const body = req.body;
+      const quiz = await quizzesCollection.insertOne(body);
+      if (quiz?.acknowledged) {
+        const result = {
+          ...body,
+          _id: quiz?.insertedId,
+        };
+        res.send(result);
+      }
+    });
+    app.delete("/quizzes/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await quizzesCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
+      if (result.deletedCount === 1) {
+        res.send({});
+      } else {
+        res.send();
+      }
+    });
+    app.patch("/quizzes/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const body = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: body,
+      };
+      const result = await quizzesCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      if (result.acknowledged) {
+        const updatedItem = await quizzesCollection
+          .find({ _id: new ObjectId(id) })
+          .toArray();
+        // console.log(updatedItem);
+        res.send(updatedItem[0]);
+      } else {
+        res.send({});
+      }
     });
 
+    // -------------------- assignment marks ----------------------------
     // get assignment marks
     app.get("/assignmentMark", async (req, res) => {
       const query = {};
@@ -160,7 +296,44 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const assignment = await assignmentsCollection.find(query).toArray();
-      res.send(assignment);
+      res.send(assignment[0]);
+    });
+    app.post("/assignmentMark", async (req, res) => {
+      const body = req.body;
+      const assignment = await assignmentMarkCollection.insertOne(body);
+      if (assignment?.acknowledged) {
+        const result = {
+          ...body,
+          _id: assignment?.insertedId,
+        };
+        res.send(result);
+      } else {
+        res.send();
+      }
+    });
+    app.patch("/assignmentMark/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const body = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+          $set: body,
+        };
+        console.log(id);
+      const result = await assignmentMarkCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      if (result.acknowledged) {
+          const updatedItem = await assignmentMarkCollection
+          .find({ _id: new ObjectId(id) })
+          .toArray();
+          console.log(updatedItem);
+        res.send(updatedItem[0]);
+      } else {
+        res.send({});
+      }
     });
 
     // get quizzes Marks
@@ -174,7 +347,7 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const quiz = await quizMarkCollection.find(query).toArray();
-      res.send(quiz);
+      res.send(quiz[0]);
     });
   } finally {
   }
