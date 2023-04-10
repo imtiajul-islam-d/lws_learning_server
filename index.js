@@ -12,7 +12,7 @@ app.use(express.json());
 
 // mongo db start
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ibovumw.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+// console.log(uri);
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -291,7 +291,7 @@ async function run() {
       const marks = await assignmentMarkCollection.find(query).toArray();
       res.send(marks);
     });
-    // get one assignment
+    // get single assignment mark
     app.get("/assignmentMark/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -342,13 +342,26 @@ async function run() {
       const marks = await quizMarkCollection.find(query).toArray();
       res.send(marks);
     });
-    // get one assignment
+    // get single quiz mark
     app.get("/quizMark/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const quiz = await quizMarkCollection.find(query).toArray();
       res.send(quiz[0]);
     });
+    app.post("/quizMark", async (req, res) => {
+        const body = req.body;
+        const quiz = await quizMarkCollection.insertOne(body);
+        if (quiz?.acknowledged) {
+          const result = {
+            ...body,
+            _id: quiz?.insertedId,
+          };
+          res.send(result);
+        } else {
+          res.send();
+        }
+      });
   } finally {
   }
 }
